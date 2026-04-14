@@ -158,6 +158,37 @@
       color: #1b4d9e;
     }
 
+    .mode-switch {
+      display: inline-flex;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 4px;
+      background: #f7faff;
+      margin-top: 10px;
+    }
+    .mode-switch button {
+      background: transparent;
+      color: var(--muted);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .mode-switch button.active {
+      background: var(--primary);
+      color: #fff;
+    }
+    .detail {
+      margin-top: 8px;
+      padding: 10px 12px;
+      border: 1px dashed var(--line);
+      border-radius: 10px;
+      background: #fafcff;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    .detail b { color: var(--text); }
+
     .copied {
       color: var(--ok);
       font-size: 13px;
@@ -179,9 +210,13 @@
     <section class="card">
       <h1>九阴真经账号分期计算器</h1>
       <p class="desc">输入号款、首付方式、利息计算方式、期数和购买日期，自动计算分期并生成可发给客户的文本。</p>
+      <div class="mode-switch" role="tablist">
+        <button type="button" id="modeFenqiBtn" class="active">分期计算</button>
+        <button type="button" id="modeRefundBtn">提前还款</button>
+      </div>
     </section>
 
-    <section class="card">
+    <section class="card" id="fenqiCard">
       <div class="grid">
         <div class="field">
           <label for="totalPrice">号款（元）</label>
@@ -238,6 +273,60 @@
         <button class="btn-light" id="resetBtn" type="button">恢复默认</button>
       </div>
       <div class="copied" id="copyState"></div>
+    </section>
+
+    <section class="card" id="refundCard" style="display:none;">
+      <p class="desc">基于上方分期参数，计算提前卖出/还款时需要退还给客户的金额。</p>
+      <div class="grid" style="margin-top:12px;">
+        <div class="field">
+          <label for="sellPrice">提前卖出价格（元）</label>
+          <input id="sellPrice" type="number" min="0" step="0.01" value="15300">
+        </div>
+        <div class="field">
+          <label for="feeMode">卖出手续费方式</label>
+          <select id="feeMode">
+            <option value="rate">按比例</option>
+            <option value="fixed">固定金额</option>
+          </select>
+        </div>
+        <div class="field" id="feeRateField">
+          <label for="feeRate">手续费比例（%）</label>
+          <input id="feeRate" type="number" min="0" step="0.01" value="5">
+        </div>
+        <div class="field" id="feeAmountField" style="display:none;">
+          <label for="feeAmount">固定手续费（元）</label>
+          <input id="feeAmount" type="number" min="0" step="0.01" value="200">
+        </div>
+        <div class="field">
+          <label for="paidPeriods">已还期数（可为 0，支持一位小数）</label>
+          <input id="paidPeriods" type="number" min="0" step="0.1" value="1">
+          <div class="hint">例如填 1.5 表示按 1.5 期利息/本金计算。</div>
+        </div>
+        <div class="field">
+          <label for="refundDate">结算日期</label>
+          <input id="refundDate" type="date">
+        </div>
+        <div class="field">
+          <label for="paidPrincipalMode">已支付本金（不含首付）</label>
+          <select id="paidPrincipalMode">
+            <option value="auto">按期数自动计算</option>
+            <option value="fixed">手动输入固定值</option>
+          </select>
+        </div>
+        <div class="field" id="paidPrincipalFixedField" style="display:none;">
+          <label for="paidPrincipalFixed">已支付本金固定值（元）</label>
+          <input id="paidPrincipalFixed" type="number" min="0" step="0.01" value="0">
+        </div>
+      </div>
+
+      <div class="result" id="refundDetail"></div>
+      <div class="detail" id="refundInternal"></div>
+
+      <div class="buttons">
+        <button class="btn-primary" id="refundCalcBtn" type="button">重新计算</button>
+        <button class="btn-light" id="refundCopyBtn" type="button">复制客户文本</button>
+      </div>
+      <div class="copied" id="refundCopyState"></div>
     </section>
 
   </main>
@@ -446,7 +535,188 @@
       el.addEventListener("change", calc);
     });
 
+    // ===== 提前还款 / 退款 模块 =====
+    const fenqiCardEl = $("fenqiCard");
+    const refundCardEl = $("refundCard");
+    const modeFenqiBtn = $("modeFenqiBtn");
+    const modeRefundBtn = $("modeRefundBtn");
+    const sellPriceEl = $("sellPrice");
+    const feeModeEl = $("feeMode");
+    const feeRateFieldEl = $("feeRateField");
+    const feeAmountFieldEl = $("feeAmountField");
+    const feeRateEl = $("feeRate");
+    const feeAmountEl = $("feeAmount");
+    const paidPeriodsEl = $("paidPeriods");
+    const refundDateEl = $("refundDate");
+    const paidPrincipalModeEl = $("paidPrincipalMode");
+    const paidPrincipalFixedFieldEl = $("paidPrincipalFixedField");
+    const paidPrincipalFixedEl = $("paidPrincipalFixed");
+    const refundDetailEl = $("refundDetail");
+    const refundInternalEl = $("refundInternal");
+    const refundResultEl = $("refundResult");
+    const refundCopyStateEl = $("refundCopyState");
+    let latestRefundCopyText = "";
+
+    function setMode(mode) {
+      const isRefund = mode === "refund";
+      fenqiCardEl.style.display = isRefund ? "none" : "";
+      refundCardEl.style.display = isRefund ? "" : "none";
+      modeFenqiBtn.classList.toggle("active", !isRefund);
+      modeRefundBtn.classList.toggle("active", isRefund);
+      if (isRefund) {
+        if (!refundDateEl.value) refundDateEl.value = getTodayYmd();
+        calcRefund();
+      }
+    }
+
+    function toggleFeeMode() {
+      const isRate = feeModeEl.value === "rate";
+      feeRateFieldEl.style.display = isRate ? "" : "none";
+      feeAmountFieldEl.style.display = isRate ? "none" : "";
+    }
+
+    function togglePaidPrincipalMode() {
+      const isFixed = paidPrincipalModeEl.value === "fixed";
+      paidPrincipalFixedFieldEl.style.display = isFixed ? "" : "none";
+    }
+
+    function calcRefund() {
+      // 读取分期参数（复用上方输入）
+      const totalPrice = Math.max(0, asNum(totalPriceEl.value));
+      const downMode = downModeEl.value;
+      const periods = Math.max(1, Math.floor(asNum(periodsEl.value, 3)));
+      const interestMode = interestModeEl.value;
+      const annualRate = Math.max(0, asNum(annualRateEl.value, 0));
+
+      let downPayment = 0;
+      if (downMode === "amount") {
+        downPayment = Math.min(totalPrice, Math.max(0, asNum(downAmountEl.value, 0)));
+      } else {
+        const downRate = Math.min(100, Math.max(0, asNum(downRateEl.value, 40)));
+        downPayment = totalPrice * downRate / 100;
+      }
+      const tailPayment = totalPrice - downPayment;
+      const principalPerMonth = tailPayment / periods;
+      let interestPerMonth = 0;
+      if (interestMode === "fixed") {
+        interestPerMonth = Math.max(0, asNum(fixedInterestEl.value, 0));
+      } else {
+        interestPerMonth = tailPayment * (annualRate / 12 / 100);
+      }
+
+      // 退款相关输入
+      const sellPrice = Math.max(0, asNum(sellPriceEl.value, 0));
+      const feeMode = feeModeEl.value;
+      const fee = feeMode === "rate"
+        ? sellPrice * Math.max(0, asNum(feeRateEl.value, 0)) / 100
+        : Math.max(0, asNum(feeAmountEl.value, 0));
+      const netSell = sellPrice - fee;
+      // 账号损益：正=亏损，负=盈利
+      const accountLoss = totalPrice - netSell;
+
+      const paidPeriods = Math.max(0, asNum(paidPeriodsEl.value, 0));
+      const paidInterest = interestPerMonth * paidPeriods;
+      let paidPrincipalExclDown;
+      if (paidPrincipalModeEl.value === "fixed") {
+        paidPrincipalExclDown = Math.max(0, asNum(paidPrincipalFixedEl.value, 0));
+      } else {
+        paidPrincipalExclDown = principalPerMonth * paidPeriods;
+      }
+      const paidPrincipalTotal = downPayment + paidPrincipalExclDown;
+
+      // 剩余可退 = 已支付本金（含首付） - 账号亏损
+      const refundAmount = paidPrincipalTotal - accountLoss;
+
+      // 按用户模板：退款 = 已支付本金(含首付) - 亏损 - 总利息
+      const refundAmountFinal = paidPrincipalTotal - accountLoss - paidInterest;
+
+      const refundDateCn = formatDateCN(refundDateEl.value) || formatDateCN(getTodayYmd());
+      const purchaseDateCn = formatDateCN(purchaseDateEl.value);
+
+      // 卖出本金表达式
+      let sellExpr;
+      if (feeMode === "rate") {
+        const rate = Math.max(0, asNum(feeRateEl.value, 0));
+        const keepRate = (100 - rate) / 100;
+        const keepRateStr = (+keepRate.toFixed(6)).toString();
+        sellExpr = fmtMoney(totalPrice) + "-" + fmtMoney(sellPrice) + "*" + keepRateStr + "=" + fmtMoney(accountLoss);
+      } else {
+        sellExpr = fmtMoney(totalPrice) + "-(" + fmtMoney(sellPrice) + "-" + fmtMoney(fee) + ")=" + fmtMoney(accountLoss);
+      }
+
+      // 已支付本金表达式
+      let paidExpr;
+      if (paidPrincipalModeEl.value === "fixed") {
+        paidExpr = fmtMoney(downPayment) + "+" + fmtMoney(paidPrincipalExclDown) + "=" + fmtMoney(paidPrincipalTotal);
+      } else {
+        paidExpr = fmtMoney(downPayment) + "+" + fmtMoney(principalPerMonth) + "*" + paidPeriods + "=" + fmtMoney(paidPrincipalTotal);
+      }
+
+      // 退款表达式
+      const refundExpr = fmtMoney(paidPrincipalTotal) + "-" + fmtMoney(accountLoss) + "-" + fmtMoney(interestPerMonth) + "*" + paidPeriods + "=" + fmtMoney(refundAmountFinal);
+
+      const lines = [];
+      lines.push("账号结算日期：" + refundDateCn);
+      if (purchaseDateCn) lines.push("账号购买日期：" + purchaseDateCn);
+      lines.push("总分期数：" + periods);
+      lines.push("已支付分期数：" + paidPeriods);
+      lines.push("账号卖出本金计算（购买价格-(卖出价格-交易费用)）：");
+      lines.push(sellExpr);
+      lines.push("已支付本金（首付款+每期本金）：");
+      lines.push(paidExpr);
+      lines.push("需转回给客户资金（已支付本金-账号卖出亏损-总利息）");
+      lines.push(refundExpr);
+
+      latestRefundCopyText = lines.join("\n");
+      refundDetailEl.textContent = latestRefundCopyText;
+
+      // 内部展示（不复制给客户）
+      const feeExpr = feeMode === "rate"
+        ? (asNum(feeRateEl.value) + "% × " + fmtMoney(sellPrice) + " = " + fmtMoney(fee))
+        : ("固定 " + fmtMoney(fee));
+      refundInternalEl.innerHTML =
+        "交易手续费：" + feeExpr + "<br>" +
+        "总利息：" + fmtMoney(interestPerMonth) + " × " + paidPeriods + " = <b>" + fmtMoney(paidInterest) + "</b><br>" +
+        "手续费 + 总利息 = <b>" + fmtMoney(fee + paidInterest) + "</b>";
+      refundCopyStateEl.textContent = "";
+    }
+
+    async function copyRefundText() {
+      const text = latestRefundCopyText;
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+        refundCopyStateEl.textContent = "已复制，可直接粘贴给客户。";
+      } catch (err) {
+        const temp = document.createElement("textarea");
+        temp.value = text;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        document.body.removeChild(temp);
+        refundCopyStateEl.textContent = "已复制，可直接粘贴给客户。";
+      }
+    }
+
+    modeFenqiBtn.addEventListener("click", () => setMode("fenqi"));
+    modeRefundBtn.addEventListener("click", () => setMode("refund"));
+    feeModeEl.addEventListener("change", () => { toggleFeeMode(); calcRefund(); });
+    paidPrincipalModeEl.addEventListener("change", () => { togglePaidPrincipalMode(); calcRefund(); });
+    $("refundCalcBtn").addEventListener("click", calcRefund);
+    $("refundCopyBtn").addEventListener("click", copyRefundText);
+    [sellPriceEl, feeRateEl, feeAmountEl, paidPeriodsEl, refundDateEl, paidPrincipalFixedEl].forEach((el) => {
+      el.addEventListener("input", calcRefund);
+      el.addEventListener("change", calcRefund);
+    });
+    // 分期输入变化时也刷新退款结果
+    [totalPriceEl, downRateEl, downAmountEl, periodsEl, annualRateEl, fixedInterestEl, downModeEl, interestModeEl].forEach((el) => {
+      el.addEventListener("input", () => { if (refundCardEl.style.display !== "none") calcRefund(); });
+      el.addEventListener("change", () => { if (refundCardEl.style.display !== "none") calcRefund(); });
+    });
+
     resetDefaults();
+    toggleFeeMode();
+    togglePaidPrincipalMode();
   </script>
 </body>
 </html>
