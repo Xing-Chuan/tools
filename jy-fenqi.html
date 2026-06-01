@@ -220,7 +220,7 @@
       <div class="grid">
         <div class="field">
           <label for="totalPrice">号款（元）</label>
-          <input id="totalPrice" type="number" min="0" step="0.01" value="15300">
+          <input id="totalPrice" type="text" inputmode="decimal" value="15300">
         </div>
         <div class="field">
           <label for="downMode">首付方式</label>
@@ -235,7 +235,7 @@
         </div>
         <div class="field" id="downAmountField" style="display:none;">
           <label for="downAmount">首付金额（元）</label>
-          <input id="downAmount" type="number" min="0" step="0.01" value="0">
+          <input id="downAmount" type="text" inputmode="decimal" value="0">
         </div>
         <div class="field">
           <label for="periods">期数（每期 1 个月）</label>
@@ -255,7 +255,7 @@
         </div>
         <div class="field" id="fixedInterestField" style="display:none;">
           <label for="fixedInterest">每期固定利息（元）</label>
-          <input id="fixedInterest" type="number" min="0" step="0.01" value="0">
+          <input id="fixedInterest" type="text" inputmode="decimal" value="0">
           <div class="hint">该模式下每期利息为固定值，不按年化比例换算。</div>
         </div>
         <div class="field">
@@ -280,7 +280,7 @@
       <div class="grid" style="margin-top:12px;">
         <div class="field">
           <label for="sellPrice">提前卖出价格（元）</label>
-          <input id="sellPrice" type="number" min="0" step="0.01" value="15300">
+          <input id="sellPrice" type="text" inputmode="decimal" value="15300">
         </div>
         <div class="field">
           <label for="feeMode">卖出手续费方式</label>
@@ -295,33 +295,33 @@
         </div>
         <div class="field" id="feeAmountField" style="display:none;">
           <label for="feeAmount">固定手续费（元）</label>
-          <input id="feeAmount" type="number" min="0" step="0.01" value="200">
+          <input id="feeAmount" type="text" inputmode="decimal" value="200">
         </div>
         <div class="field">
           <label for="feePeriods">计算费用期数（可为 0，支持一位小数）</label>
           <input id="feePeriods" type="number" min="0" step="0.1" value="1">
-          <div class="hint">用于计算总利息；默认也作为已还本金期数。</div>
+          <div class="hint">用于计算总利息；默认也作为已支付金额期数。</div>
         </div>
         <div class="field">
           <label for="refundDate">结算日期</label>
           <input id="refundDate" type="date">
         </div>
         <div class="field">
-          <label for="paidPrincipalMode">已还本金计算方式（不含首付）</label>
+          <label for="paidPrincipalMode">已支付金额计算方式（不含首付）</label>
           <select id="paidPrincipalMode">
             <option value="auto">默认同费用期数</option>
             <option value="periods">按已还期数计算</option>
-            <option value="fixed">手动输入已还本金</option>
+            <option value="fixed">手动输入已支付金额</option>
           </select>
         </div>
         <div class="field" id="paidPrincipalPeriodsField" style="display:none;">
           <label for="paidPrincipalPeriods">已还期数（可为 0，支持一位小数）</label>
           <input id="paidPrincipalPeriods" type="number" min="0" step="0.1" value="1">
-          <div class="hint">仅用于计算已还本金，不影响费用期数。</div>
+          <div class="hint">仅用于计算已支付金额，不影响费用期数。</div>
         </div>
         <div class="field" id="paidPrincipalFixedField" style="display:none;">
-          <label for="paidPrincipalFixed">手动已还本金（元，不含首付）</label>
-          <input id="paidPrincipalFixed" type="number" min="0" step="0.01" value="0">
+          <label for="paidPrincipalFixed">手动已支付金额（元，不含首付）</label>
+          <input id="paidPrincipalFixed" type="text" inputmode="decimal" value="0">
         </div>
       </div>
 
@@ -396,6 +396,17 @@
       return Number.isFinite(n) ? n : fallback;
     }
 
+    function asMoney(v, fallback = 0) {
+      const raw = String(v ?? "").trim();
+      if (!raw) return fallback;
+      if (!raw.includes(",")) return asNum(raw, fallback);
+      const parts = raw.split(",").map((part) => part.trim()).filter(Boolean);
+      if (!parts.length) return fallback;
+      const nums = parts.map((part) => Number(part));
+      if (nums.some((num) => !Number.isFinite(num))) return fallback;
+      return nums.reduce((sum, num) => sum + num, 0);
+    }
+
     function fmtMoney(n) {
       return asNum(n).toFixed(6).replace(/\.?0+$/, "");
     }
@@ -437,7 +448,7 @@
     }
 
     function calc() {
-      const totalPrice = Math.max(0, asNum(totalPriceEl.value));
+      const totalPrice = Math.max(0, asMoney(totalPriceEl.value));
       const downMode = downModeEl.value;
       const periods = Math.max(1, Math.floor(asNum(periodsEl.value, 3)));
       const interestMode = interestModeEl.value;
@@ -446,7 +457,7 @@
       let downPayment = 0;
       let downRate = 0;
       if (downMode === "amount") {
-        downPayment = Math.min(totalPrice, Math.max(0, asNum(downAmountEl.value, 0)));
+        downPayment = Math.min(totalPrice, Math.max(0, asMoney(downAmountEl.value, 0)));
         downRate = totalPrice > 0 ? downPayment / totalPrice * 100 : 0;
       } else {
         downRate = Math.min(100, Math.max(0, asNum(downRateEl.value, 40)));
@@ -458,7 +469,7 @@
       let monthlyRate = annualRate / 12 / 100;
       let interestPerMonth = 0;
       if (interestMode === "fixed") {
-        interestPerMonth = Math.max(0, asNum(fixedInterestEl.value, 0));
+        interestPerMonth = Math.max(0, asMoney(fixedInterestEl.value, 0));
         monthlyRate = tailPayment > 0 ? interestPerMonth / tailPayment : 0;
       } else {
         interestPerMonth = tailPayment * monthlyRate;
@@ -592,7 +603,7 @@
 
     function calcRefund() {
       // 读取分期参数（复用上方输入）
-      const totalPrice = Math.max(0, asNum(totalPriceEl.value));
+      const totalPrice = Math.max(0, asMoney(totalPriceEl.value));
       const downMode = downModeEl.value;
       const periods = Math.max(1, Math.floor(asNum(periodsEl.value, 3)));
       const interestMode = interestModeEl.value;
@@ -600,7 +611,7 @@
 
       let downPayment = 0;
       if (downMode === "amount") {
-        downPayment = Math.min(totalPrice, Math.max(0, asNum(downAmountEl.value, 0)));
+        downPayment = Math.min(totalPrice, Math.max(0, asMoney(downAmountEl.value, 0)));
       } else {
         const downRate = Math.min(100, Math.max(0, asNum(downRateEl.value, 40)));
         downPayment = totalPrice * downRate / 100;
@@ -609,17 +620,18 @@
       const principalPerMonth = tailPayment / periods;
       let interestPerMonth = 0;
       if (interestMode === "fixed") {
-        interestPerMonth = Math.max(0, asNum(fixedInterestEl.value, 0));
+        interestPerMonth = Math.max(0, asMoney(fixedInterestEl.value, 0));
       } else {
         interestPerMonth = tailPayment * (annualRate / 12 / 100);
       }
+      const eachPayment = principalPerMonth + interestPerMonth;
 
       // 退款相关输入
-      const sellPrice = Math.max(0, asNum(sellPriceEl.value, 0));
+      const sellPrice = Math.max(0, asMoney(sellPriceEl.value, 0));
       const feeMode = feeModeEl.value;
       const fee = feeMode === "rate"
         ? sellPrice * Math.max(0, asNum(feeRateEl.value, 0)) / 100
-        : Math.max(0, asNum(feeAmountEl.value, 0));
+        : Math.max(0, asMoney(feeAmountEl.value, 0));
       const netSell = sellPrice - fee;
       // 账号损益：正数为盈利，负数为亏损。
       const accountDelta = netSell - totalPrice;
@@ -628,23 +640,23 @@
 
       const feePeriods = Math.max(0, asNum(feePeriodsEl.value, 0));
       const paidInterest = interestPerMonth * feePeriods;
-      let paidPrincipalExclDown;
-      let paidPrincipalPeriods;
+      let paidAmountExclDown;
+      let paidAmountPeriods;
       if (paidPrincipalModeEl.value === "fixed") {
-        paidPrincipalExclDown = Math.max(0, asNum(paidPrincipalFixedEl.value, 0));
-        paidPrincipalPeriods = null;
+        paidAmountExclDown = Math.max(0, asMoney(paidPrincipalFixedEl.value, 0));
+        paidAmountPeriods = null;
       } else if (paidPrincipalModeEl.value === "periods") {
-        paidPrincipalPeriods = Math.max(0, asNum(paidPrincipalPeriodsEl.value, 0));
-        paidPrincipalExclDown = principalPerMonth * paidPrincipalPeriods;
+        paidAmountPeriods = Math.max(0, asNum(paidPrincipalPeriodsEl.value, 0));
+        paidAmountExclDown = eachPayment * paidAmountPeriods;
       } else {
-        paidPrincipalPeriods = feePeriods;
-        paidPrincipalExclDown = principalPerMonth * paidPrincipalPeriods;
+        paidAmountPeriods = feePeriods;
+        paidAmountExclDown = eachPayment * paidAmountPeriods;
       }
-      const paidPrincipalTotal = downPayment + paidPrincipalExclDown;
+      const paidAmountTotal = downPayment + paidAmountExclDown;
 
-      // 退款 = 已支付本金(含首付) + 账号盈亏 - 总利息。
+      // 退款 = 已支付金额(含首付和已还期款) + 账号盈亏 - 总利息。
       // 盈利时 accountDelta 为正，亏损时为负，会自然变成减法。
-      const refundAmountFinal = paidPrincipalTotal + accountDelta - paidInterest;
+      const refundAmountFinal = paidAmountTotal + accountDelta - paidInterest;
 
       const refundDateCn = formatDateCN(refundDateEl.value) || formatDateCN(getTodayYmd());
       const purchaseDateCn = formatDateCN(purchaseDateEl.value);
@@ -666,35 +678,31 @@
         sellExpr = fmtMoney(totalPrice) + "-" + netSellExpr + "=" + fmtMoney(accountDeltaAbs) + "（亏损）";
       }
 
-      // 已支付本金表达式
+      // 已支付金额表达式
       let paidExpr;
       if (paidPrincipalModeEl.value === "fixed") {
-        paidExpr = fmtMoney(downPayment) + "+" + fmtMoney(paidPrincipalExclDown) + "=" + fmtMoney(paidPrincipalTotal);
+        paidExpr = fmtMoney(downPayment) + "+" + fmtMoney(paidAmountExclDown) + "=" + fmtMoney(paidAmountTotal);
       } else {
-        paidExpr = fmtMoney(downPayment) + "+" + fmtMoney(principalPerMonth) + "*" + paidPrincipalPeriods + "=" + fmtMoney(paidPrincipalTotal);
+        paidExpr = fmtMoney(downPayment) + "+" + fmtMoney(eachPayment) + "*" + paidAmountPeriods + "=" + fmtMoney(paidAmountTotal);
       }
 
       // 退款表达式
       const accountDeltaExpr = (isAccountProfit ? "+" : "-") + fmtMoney(accountDeltaAbs);
-      const refundExpr = fmtMoney(paidPrincipalTotal) + accountDeltaExpr + "-" + fmtMoney(interestPerMonth) + "*" + feePeriods + "=" + fmtMoney(refundAmountFinal);
+      const refundExpr = fmtMoney(paidAmountTotal) + accountDeltaExpr + "-" + fmtMoney(interestPerMonth) + "*" + feePeriods + "=" + fmtMoney(refundAmountFinal);
 
       const lines = [];
       lines.push("账号结算日期：" + refundDateCn);
       if (purchaseDateCn) lines.push("账号购买日期：" + purchaseDateCn);
       lines.push("总分期数：" + periods);
       lines.push("计算费用期数：" + feePeriods);
-      if (paidPrincipalModeEl.value === "fixed") {
-        lines.push("已还本金：手动输入");
-      } else if (paidPrincipalModeEl.value === "periods") {
-        lines.push("已还本金期数：" + paidPrincipalPeriods);
-      } else {
-        lines.push("已还本金期数：默认同费用期数 " + paidPrincipalPeriods);
+      if (paidPrincipalModeEl.value !== "fixed") {
+        lines.push("已支付金额期数：" + paidAmountPeriods);
       }
-      lines.push("账号卖出本金计算：");
+      lines.push("账号卖出盈亏计算：");
       lines.push(sellExpr);
-      lines.push(paidPrincipalModeEl.value === "fixed" ? "已支付本金（首付款+手动已还本金）：" : "已支付本金（首付款+每期本金*已还期数）：");
+      lines.push(paidPrincipalModeEl.value === "fixed" ? "已支付金额（首付款+已支付金额）：" : "已支付金额（首付款+每期实付金额*已还期数）：");
       lines.push(paidExpr);
-      lines.push("需转回给客户资金（已支付本金" + (isAccountProfit ? "+账号卖出盈利" : "-账号卖出亏损") + "-总利息）");
+      lines.push("需转回给客户资金（已支付金额" + (isAccountProfit ? "+账号卖出盈利" : "-账号卖出亏损") + "-总利息）");
       lines.push(refundExpr);
 
       latestRefundCopyText = lines.join("\n");
@@ -707,6 +715,7 @@
       refundInternalEl.innerHTML =
         "交易手续费：" + feeExpr + "<br>" +
         "净卖出金额：" + fmtMoney(netSell) + "，账号" + (isAccountProfit ? "盈利" : "亏损") + "：<b>" + fmtMoney(accountDeltaAbs) + "</b><br>" +
+        "每期实付金额：" + fmtMoney(principalPerMonth) + " + " + fmtMoney(interestPerMonth) + " = <b>" + fmtMoney(eachPayment) + "</b><br>" +
         "总利息：" + fmtMoney(interestPerMonth) + " × " + feePeriods + " = <b>" + fmtMoney(paidInterest) + "</b><br>" +
         "手续费 + 总利息 = <b>" + fmtMoney(fee + paidInterest) + "</b>";
       refundCopyStateEl.textContent = "";
