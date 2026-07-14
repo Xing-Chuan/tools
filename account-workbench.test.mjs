@@ -1,44 +1,50 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import {
-  getService,
-  getServices,
-  isSafeExternalUrl,
-} from './account-workbench.mjs';
 
-test('exposes the five supported account-service journeys', () => {
-  assert.deepEqual(
-    getServices().map(({ id }) => id),
-    ['phone', 'email', 'password', 'security-card', 'ticket'],
-  );
+const expectedLinks = [
+  'https://safe.woniu.com/safecenter/safe_bind.html',
+  'https://safe.woniu.com/callcenter/self_help.html',
+  'https://9yin.woniu.com/main.html',
+  'https://safe.woniu.com/usercenter/mindex.html',
+  'https://www.woniu.com/static/act/m/',
+  'https://safe.woniu.com/safecenter/safe_liftItem.html',
+  'https://www.woniu.com/static/act/snaildun/',
+  'https://www.woniu.com/static/act/snailjishi/',
+  'http://jishi.woniu.com/resources/9yin/toServerList.html',
+];
+
+async function readWorkbench() {
+  return readFile(new URL('./jy-account-workbench.html', import.meta.url), 'utf8');
+}
+
+test('shows all nine requested direct-navigation links', async () => {
+  const html = await readWorkbench();
+  const links = [...html.matchAll(/data-target="([^"]+)"/g)].map((match) => match[1]);
+
+  assert.deepEqual(links, expectedLinks);
+  assert.match(html, /安全绑定/);
+  assert.match(html, /更新安全手机、邮箱/);
+  assert.match(html, /自助服务/);
+  assert.doesNotMatch(html, /我的问题/);
 });
 
-test('phone journey directs users to the official self-service centre', () => {
-  const journey = getService('phone');
+test('provides one copy-link control per service and no progress ledger', async () => {
+  const html = await readWorkbench();
 
-  assert.equal(journey.title, '换绑手机');
-  assert.equal(journey.url, 'https://safe.woniu.com/callcenter/self_help.html');
-  assert.equal(journey.steps.length, 4);
-  assert.match(journey.notice, /不输入密码/);
+  assert.equal((html.match(/class="copy-link"/g) ?? []).length, expectedLinks.length);
+  assert.doesNotMatch(html, /本机进度簿|localStorage|标记为进行中/);
 });
 
-test('unknown journeys are not resolved', () => {
-  assert.equal(getService('unknown'), undefined);
+test('uses clean forward labels without decorative arrows', async () => {
+  const html = await readWorkbench();
+
+  assert.doesNotMatch(html, /前往 ↗/);
 });
 
-test('only https links to official Snail domains are allowed', () => {
-  assert.equal(isSafeExternalUrl('https://safe.woniu.com/callcenter/self_help.html'), true);
-  assert.equal(isSafeExternalUrl('https://support.woniu.com/'), true);
-  assert.equal(isSafeExternalUrl('http://safe.woniu.com/'), false);
-  assert.equal(isSafeExternalUrl('https://safe.woniu.com.evil.example/'), false);
-});
+test('names the page 九阴事务台', async () => {
+  const html = await readWorkbench();
 
-test('the standalone HTML keeps all service cards visible without JavaScript modules', async () => {
-  const html = await readFile(new URL('./jy-account-workbench.html', import.meta.url), 'utf8');
-  const cards = html.match(/class="service"/g) ?? [];
-
-  assert.equal(cards.length, 5);
-  assert.match(html, /换绑手机/);
-  assert.match(html, /提交工单/);
+  assert.match(html, /<h1>九阴事务台<\/h1>/);
+  assert.match(html, /<title>九阴 · 事务台<\/title>/);
 });

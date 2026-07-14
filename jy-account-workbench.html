@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#14251d">
-  <title>九阴 · 账号事务台</title>
+  <title>九阴 · 事务台</title>
   <style>
     :root { --ink:#17271e; --paper:#f2ebd9; --paper2:#e6d7b6; --jade:#1e5b48; --jade2:#367c62; --red:#a64632; --mist:rgba(255,252,243,.78); }
     * { box-sizing:border-box; }
@@ -20,64 +20,60 @@
     .section-label { margin:20px 0 10px; display:flex; align-items:center; gap:10px; font-weight:bold; letter-spacing:.1em; }
     .section-label::after { content:""; height:1px; flex:1; background:linear-gradient(90deg,#907947,transparent); }
     .service-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
-    .service { min-height:105px; padding:14px 12px; border:1px solid rgba(72,77,43,.28); border-radius:4px 16px 4px 16px; color:var(--ink); text-align:left; background:var(--mist); box-shadow:0 4px 12px rgba(76,63,31,.08); cursor:pointer; transition:transform .18s,background .18s,box-shadow .18s; font:inherit; }
-    .service:hover,.service:focus-visible,.service[aria-pressed="true"] { outline:none; transform:translateY(-2px); background:#fff9e9; box-shadow:0 10px 18px rgba(55,75,46,.15); }
-    .service[aria-pressed="true"] { border-color:var(--jade); box-shadow:inset 3px 0 var(--jade),0 8px 16px rgba(55,75,46,.14); }
+    .service { min-height:166px; display:flex; flex-direction:column; padding:14px 12px 12px; border:1px solid rgba(72,77,43,.28); border-radius:4px 16px 4px 16px; color:var(--ink); background:var(--mist); box-shadow:0 4px 12px rgba(76,63,31,.08); transition:transform .18s,background .18s,box-shadow .18s; }
+    .service:hover { transform:translateY(-2px); background:#fff9e9; box-shadow:0 10px 18px rgba(55,75,46,.15); }
     .stamp { width:28px; height:28px; display:grid; place-items:center; margin-bottom:6px; border:1px solid var(--jade); border-radius:50%; color:var(--jade); font-size:12px; }
     .service strong,.service small { display:block; } .service strong { font-size:17px; } .service small { margin-top:1px; color:#68705d; font-size:12px; }
-    .journey { display:none; margin-top:17px; padding:18px; border:1px solid #b9aa83; border-radius:2px 20px 2px 20px; background:rgba(255,252,243,.86); box-shadow:0 12px 28px rgba(85,68,29,.12); }
-    .journey.active { display:block; animation:unroll .32s ease-out; } @keyframes unroll { from { opacity:0; transform:translateY(8px) scale(.98); } }
-    .journey-head { display:flex; align-items:start; gap:11px; } .journey h2 { margin:0; font-size:22px; } .journey p { margin:3px 0 0; color:#576452; }
-    ol { margin:17px 0 13px; padding:0; list-style:none; counter-reset:steps; } li { position:relative; min-height:33px; padding:2px 0 10px 37px; counter-increment:steps; } li::before { content:counter(steps); position:absolute; left:0; top:0; display:grid; place-items:center; width:23px; height:23px; border-radius:50%; color:#f8f0de; background:var(--jade); font-size:12px; } li:not(:last-child)::after { content:""; position:absolute; left:11px; top:25px; height:15px; border-left:1px dashed #9caf91; }
-    .service-note { margin:4px 0 15px; padding:9px 10px; color:#6d3e2c; background:#f6e9ce; border-radius:2px 9px 2px 9px; font-size:13px; }
-    .actions { display:grid; grid-template-columns:1fr 1fr; gap:9px; } a.action,button.action { min-height:44px; display:flex; align-items:center; justify-content:center; gap:6px; border:1px solid var(--jade); border-radius:2px 12px 2px 12px; text-decoration:none; cursor:pointer; font:inherit; } .primary { color:#fff9ed; background:var(--jade); } .secondary { color:var(--jade); background:transparent; }
-    .ledger { margin-top:20px; padding:14px; border:1px dashed #9d8d67; color:#576452; background:rgba(255,253,245,.48); font-size:13px; } .ledger b { color:var(--ink); } .ledger p { margin:5px 0 0; } .ledger button { padding:0; border:0; border-bottom:1px solid currentColor; color:var(--jade); background:transparent; cursor:pointer; font:inherit; }
+    .service-link { color:inherit; text-decoration:none; outline:none; } .service-link:focus-visible { color:var(--jade); text-decoration:underline; text-underline-offset:3px; }
+    .service-actions { display:grid; grid-template-columns:1fr; gap:6px; margin-top:auto; padding-top:9px; border-top:1px solid rgba(83,100,75,.16); }
+    .go-link,.copy-link { min-height:27px; display:flex; align-items:center; justify-content:center; padding:3px 7px; border:1px solid var(--jade); border-radius:2px 8px 2px 8px; color:var(--jade); background:transparent; font:12px/1.2 inherit; text-decoration:none; cursor:pointer; }
+    .go-link { color:#fff9ed; background:var(--jade); } .copy-link[data-copied="true"] { color:#fff9ed; background:var(--jade2); border-color:var(--jade2); }
     footer { margin:24px 4px 0; color:#787162; text-align:center; font-size:12px; }
     @media (min-width:600px) { .service-grid { grid-template-columns:repeat(5,1fr); } .service { min-height:125px; } }
   </style>
 </head>
 <body>
   <main class="wrap">
-    <header><p class="eyebrow">SAFE ACCOUNT DESK · 仅作办理引导</p><h1>账号事务台</h1><p class="intro">把复杂的官方账户流程，整理成适合手机阅读的一页清单。</p><i class="seal">慎行</i></header>
-    <aside class="notice">安全边界：本页不会登录、收集或保存账号、密码、验证码、密保卡和身份资料。关键操作请在官方页面或自己的远程 PC 中完成。</aside>
-    <div class="section-label">选择要办理的事项</div>
+    <header><p class="eyebrow">SAFE ACCOUNT DESK · 官方入口导航</p><h1>九阴事务台</h1><p class="intro">常用服务一键直达；需要分享时，可直接复制对应官方链接。</p><i class="seal">慎行</i></header>
+    <aside class="notice">安全边界：本页只提供官方入口，不会登录、收集或保存账号、密码、验证码、密保卡和身份资料。</aside>
+    <div class="section-label">选择要前往的服务</div>
     <section class="service-grid" id="service-grid" aria-label="账号服务">
-      <button class="service" type="button" data-id="phone" aria-pressed="false"><span class="stamp">手</span><strong>换绑手机</strong><small>更新安全手机号</small></button>
-      <button class="service" type="button" data-id="email" aria-pressed="false"><span class="stamp">信</span><strong>换绑邮箱</strong><small>更新安全邮箱</small></button>
-      <button class="service" type="button" data-id="password" aria-pressed="false"><span class="stamp">锁</span><strong>修改密码</strong><small>更新通行证密码</small></button>
-      <button class="service" type="button" data-id="security-card" aria-pressed="false"><span class="stamp">盾</span><strong>密保卡</strong><small>绑定、换绑或解绑</small></button>
-      <button class="service" type="button" data-id="ticket" aria-pressed="false"><span class="stamp">单</span><strong>提交工单</strong><small>人工协助与问题反馈</small></button>
+      <article class="service" data-target="https://safe.woniu.com/safecenter/safe_bind.html"><a class="service-link" href="https://safe.woniu.com/safecenter/safe_bind.html" target="_blank" rel="noopener noreferrer"><span class="stamp">安</span><strong>安全绑定</strong><small>更新安全手机、邮箱</small></a><div class="service-actions"><a class="go-link" href="https://safe.woniu.com/safecenter/safe_bind.html" target="_blank" rel="noopener noreferrer">前往</a><button class="copy-link" type="button">复制链接</button></div></article>
+      <article class="service" data-target="https://safe.woniu.com/callcenter/self_help.html"><a class="service-link" href="https://safe.woniu.com/callcenter/self_help.html" target="_blank" rel="noopener noreferrer"><span class="stamp">助</span><strong>自助服务</strong><small>密码、密保与账户服务</small></a><div class="service-actions"><a class="go-link" href="https://safe.woniu.com/callcenter/self_help.html" target="_blank" rel="noopener noreferrer">前往</a><button class="copy-link" type="button">复制链接</button></div></article>
+      <article class="service" data-target="https://9yin.woniu.com/main.html"><a class="service-link" href="https://9yin.woniu.com/main.html" target="_blank" rel="noopener noreferrer"><span class="stamp">首</span><strong>九阴首页</strong><small>官网主站</small></a><div class="service-actions"><a class="go-link" href="https://9yin.woniu.com/main.html" target="_blank" rel="noopener noreferrer">前往</a><button class="copy-link" type="button">复制链接</button></div></article>
+      <article class="service" data-target="https://safe.woniu.com/usercenter/mindex.html"><a class="service-link" href="https://safe.woniu.com/usercenter/mindex.html" target="_blank" rel="noopener noreferrer"><span class="stamp">户</span><strong>账户管理</strong><small>通行证服务中心</small></a><div class="service-actions"><a class="go-link" href="https://safe.woniu.com/usercenter/mindex.html" target="_blank" rel="noopener noreferrer">前往</a><button class="copy-link" type="button">复制链接</button></div></article>
+      <article class="service" data-target="https://www.woniu.com/static/act/m/"><a class="service-link" href="https://www.woniu.com/static/act/m/" target="_blank" rel="noopener noreferrer"><span class="stamp">出</span><strong>注销登录</strong><small>账号退出入口</small></a><div class="service-actions"><a class="go-link" href="https://www.woniu.com/static/act/m/" target="_blank" rel="noopener noreferrer">前往</a><button class="copy-link" type="button">复制链接</button></div></article>
+      <article class="service" data-target="https://safe.woniu.com/safecenter/safe_liftItem.html"><a class="service-link" href="https://safe.woniu.com/safecenter/safe_liftItem.html" target="_blank" rel="noopener noreferrer"><span class="stamp">验</span><strong>弹窗认证</strong><small>安全认证入口</small></a><div class="service-actions"><a class="go-link" href="https://safe.woniu.com/safecenter/safe_liftItem.html" target="_blank" rel="noopener noreferrer">前往</a><button class="copy-link" type="button">复制链接</button></div></article>
+      <article class="service" data-target="https://www.woniu.com/static/act/snaildun/"><a class="service-link" href="https://www.woniu.com/static/act/snaildun/" target="_blank" rel="noopener noreferrer"><span class="stamp">盾</span><strong>蜗牛盾 App</strong><small>移动安全工具</small></a><div class="service-actions"><a class="go-link" href="https://www.woniu.com/static/act/snaildun/" target="_blank" rel="noopener noreferrer">前往</a><button class="copy-link" type="button">复制链接</button></div></article>
+      <article class="service" data-target="https://www.woniu.com/static/act/snailjishi/"><a class="service-link" href="https://www.woniu.com/static/act/snailjishi/" target="_blank" rel="noopener noreferrer"><span class="stamp">集</span><strong>蜗牛集市 App</strong><small>移动端集市</small></a><div class="service-actions"><a class="go-link" href="https://www.woniu.com/static/act/snailjishi/" target="_blank" rel="noopener noreferrer">前往</a><button class="copy-link" type="button">复制链接</button></div></article>
+      <article class="service" data-target="http://jishi.woniu.com/resources/9yin/toServerList.html"><a class="service-link" href="http://jishi.woniu.com/resources/9yin/toServerList.html" target="_blank" rel="noopener noreferrer"><span class="stamp">市</span><strong>蜗牛集市 PC</strong><small>电脑端集市</small></a><div class="service-actions"><a class="go-link" href="http://jishi.woniu.com/resources/9yin/toServerList.html" target="_blank" rel="noopener noreferrer">前往</a><button class="copy-link" type="button">复制链接</button></div></article>
     </section>
-    <section class="journey" id="journey" aria-live="polite"></section>
-    <section class="ledger"><b>本机进度簿</b><p id="progress">尚未标记办理事项。</p><button type="button" id="clear-progress">清空本机记录</button></section>
     <footer>非官方页面 · 所有账户操作均以蜗牛官方页面规则为准</footer>
   </main>
   <script>
-    const services = {
-      phone: { icon: '手', title: '换绑手机', caption: '更新安全手机号', url: 'https://safe.woniu.com/callcenter/self_help.html', steps: ['确认旧手机号或准备身份核验材料', '进入“安全自助”中的手机修改', '按官网提示完成验证', '确认新号码可正常接收通知'], notice: '请只在官方页面输入验证信息；本工具不输入密码、不保存验证码。' },
-      email: { icon: '信', title: '换绑邮箱', caption: '更新安全邮箱', url: 'https://safe.woniu.com/callcenter/self_help.html', steps: ['准备可正常收信的新邮箱', '进入“安全自助”中的邮箱修改', '在官方页面完成邮箱验证', '检查新邮箱的验证邮件'], notice: '完成后建议立即测试新邮箱是否能收到官方邮件。' },
-      password: { icon: '锁', title: '修改密码', caption: '更新通行证密码', url: 'https://safe.woniu.com/callcenter/self_help.html', steps: ['确认当前账号可通过安全验证', '进入“账号、密码自助”中的修改密码', '设置未在其他站点使用过的新密码', '在密码管理器中更新记录'], notice: '不要将密码、验证码或密保答案发送给任何人，包括本工具。' },
-      'security-card': { icon: '盾', title: '密保卡', caption: '绑定、换绑或解绑', url: 'https://safe.woniu.com/callcenter/self_help.html', steps: ['确认本次是申请、绑定、更换还是解绑', '进入“密保卡自助”', '按官网指引完成身份验证', '妥善保存密保卡，不要截图外传'], notice: '密保卡属于高敏感信息，建议优先在远程 PC 或实体电脑上操作。' },
-      ticket: { icon: '单', title: '提交工单', caption: '人工协助与问题反馈', url: 'https://support.woniu.com/', steps: ['整理账号归属与问题发生时间', '准备订单号、角色信息或相关截图', '在客服中心选择对应问题分类', '保存工单编号，等待官方回复'], notice: '截图前请遮盖身份证号、完整手机号、密码和验证码。' },
-    };
-    const grid = document.querySelector('#service-grid');
-    const journey = document.querySelector('#journey');
-    const progress = document.querySelector('#progress');
-    const storageKey = 'jy-account-desk-progress';
-    const renderProgress = () => { const item = localStorage.getItem(storageKey); progress.textContent = item ? `正在办理：${item}（仅保存在这台设备）` : '尚未标记办理事项。'; };
-    function isSafeExternalUrl(value) {
-      try { const url = new URL(value); return url.protocol === 'https:' && ['safe.woniu.com', 'support.woniu.com'].includes(url.hostname); } catch { return false; }
+    async function copyText(value) {
+      if (navigator.clipboard?.writeText) {
+        try { await navigator.clipboard.writeText(value); return true; } catch { /* fall through */ }
+      }
+      const field = document.createElement('textarea');
+      field.value = value;
+      field.setAttribute('readonly', '');
+      field.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+      document.body.append(field);
+      field.select();
+      const copied = document.execCommand('copy');
+      field.remove();
+      return copied;
     }
-    function openJourney(id) {
-      const service = services[id]; if (!service) return;
-      [...grid.children].forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.id === id)));
-      journey.innerHTML = `<div class="journey-head"><span class="stamp">${service.icon}</span><div><h2>${service.title}</h2><p>${service.caption}</p></div></div><ol>${service.steps.map((step) => `<li>${step}</li>`).join('')}</ol><p class="service-note">${service.notice}</p><div class="actions"><a class="action primary" target="_blank" rel="noopener noreferrer" href="${isSafeExternalUrl(service.url) ? service.url : '#'}">前往官方办理 ↗</a><button class="action secondary" type="button" id="mark-progress">标记为进行中</button></div>`;
-      journey.classList.add('active'); journey.querySelector('#mark-progress').addEventListener('click', () => { localStorage.setItem(storageKey, service.title); renderProgress(); });
-      journey.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-    grid.querySelectorAll('.service').forEach((button) => button.addEventListener('click', () => openJourney(button.dataset.id)));
-    document.querySelector('#clear-progress').addEventListener('click', () => { localStorage.removeItem(storageKey); renderProgress(); });
-    renderProgress();
+    document.querySelectorAll('.service').forEach((service) => {
+      const button = service.querySelector('.copy-link');
+      button.addEventListener('click', async () => {
+        const copied = await copyText(service.dataset.target);
+        button.textContent = copied ? '已复制 ✓' : '复制失败';
+        button.dataset.copied = String(copied);
+        setTimeout(() => { button.textContent = '复制链接'; button.dataset.copied = 'false'; }, 1800);
+      });
+    });
   </script>
 </body>
 </html>
