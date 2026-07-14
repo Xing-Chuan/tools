@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#14251d">
+  <title>九阴 · 账号事务台</title>
+  <style>
+    :root { --ink:#17271e; --paper:#f2ebd9; --paper2:#e6d7b6; --jade:#1e5b48; --jade2:#367c62; --red:#a64632; --mist:rgba(255,252,243,.78); }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; color:var(--ink); background:radial-gradient(ellipse at 8% 0%,#f9f0d9 0 16%,transparent 42%), radial-gradient(ellipse at 100% 80%,#b3c8ad 0 7%,transparent 43%), repeating-linear-gradient(10deg,rgba(89,63,23,.025) 0 1px,transparent 1px 7px),var(--paper); font:15px/1.55 "STKaiti","KaiTi","Kaiti SC","Noto Serif SC",serif; }
+    .wrap { width:min(100%,760px); margin:auto; padding:22px 16px 42px; }
+    header { position:relative; overflow:hidden; padding:25px 20px 22px; color:#fbf5e8; background:linear-gradient(125deg,#123326,#1f5944 62%,#356a50); border-radius:4px 28px 4px 28px; box-shadow:0 13px 25px rgba(36,47,29,.19); }
+    header::after { content:"九阴"; position:absolute; right:-8px; top:-38px; color:rgba(255,255,255,.08); font-size:122px; font-weight:bold; transform:rotate(-10deg); }
+    .eyebrow { margin:0 0 5px; letter-spacing:.17em; color:#cfddbc; font-size:12px; }
+    h1 { position:relative; z-index:1; margin:0; font-size:32px; letter-spacing:.08em; line-height:1.15; }
+    .intro { position:relative; z-index:1; max-width:410px; margin:9px 0 0; color:#e4ead9; }
+    .seal { position:absolute; z-index:2; right:20px; bottom:20px; width:40px; height:40px; display:grid; place-items:center; border:1px solid #d7b278; border-radius:50%; color:#e4bd80; font-size:12px; transform:rotate(-12deg); }
+    .notice { margin:18px 2px; padding:11px 13px; border-left:3px solid var(--red); color:#623a2c; background:rgba(255,249,236,.64); font-size:13px; }
+    .section-label { margin:20px 0 10px; display:flex; align-items:center; gap:10px; font-weight:bold; letter-spacing:.1em; }
+    .section-label::after { content:""; height:1px; flex:1; background:linear-gradient(90deg,#907947,transparent); }
+    .service-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .service { min-height:105px; padding:14px 12px; border:1px solid rgba(72,77,43,.28); border-radius:4px 16px 4px 16px; color:var(--ink); text-align:left; background:var(--mist); box-shadow:0 4px 12px rgba(76,63,31,.08); cursor:pointer; transition:transform .18s,background .18s,box-shadow .18s; font:inherit; }
+    .service:hover,.service:focus-visible,.service[aria-pressed="true"] { outline:none; transform:translateY(-2px); background:#fff9e9; box-shadow:0 10px 18px rgba(55,75,46,.15); }
+    .service[aria-pressed="true"] { border-color:var(--jade); box-shadow:inset 3px 0 var(--jade),0 8px 16px rgba(55,75,46,.14); }
+    .stamp { width:28px; height:28px; display:grid; place-items:center; margin-bottom:6px; border:1px solid var(--jade); border-radius:50%; color:var(--jade); font-size:12px; }
+    .service strong,.service small { display:block; } .service strong { font-size:17px; } .service small { margin-top:1px; color:#68705d; font-size:12px; }
+    .journey { display:none; margin-top:17px; padding:18px; border:1px solid #b9aa83; border-radius:2px 20px 2px 20px; background:rgba(255,252,243,.86); box-shadow:0 12px 28px rgba(85,68,29,.12); }
+    .journey.active { display:block; animation:unroll .32s ease-out; } @keyframes unroll { from { opacity:0; transform:translateY(8px) scale(.98); } }
+    .journey-head { display:flex; align-items:start; gap:11px; } .journey h2 { margin:0; font-size:22px; } .journey p { margin:3px 0 0; color:#576452; }
+    ol { margin:17px 0 13px; padding:0; list-style:none; counter-reset:steps; } li { position:relative; min-height:33px; padding:2px 0 10px 37px; counter-increment:steps; } li::before { content:counter(steps); position:absolute; left:0; top:0; display:grid; place-items:center; width:23px; height:23px; border-radius:50%; color:#f8f0de; background:var(--jade); font-size:12px; } li:not(:last-child)::after { content:""; position:absolute; left:11px; top:25px; height:15px; border-left:1px dashed #9caf91; }
+    .service-note { margin:4px 0 15px; padding:9px 10px; color:#6d3e2c; background:#f6e9ce; border-radius:2px 9px 2px 9px; font-size:13px; }
+    .actions { display:grid; grid-template-columns:1fr 1fr; gap:9px; } a.action,button.action { min-height:44px; display:flex; align-items:center; justify-content:center; gap:6px; border:1px solid var(--jade); border-radius:2px 12px 2px 12px; text-decoration:none; cursor:pointer; font:inherit; } .primary { color:#fff9ed; background:var(--jade); } .secondary { color:var(--jade); background:transparent; }
+    .ledger { margin-top:20px; padding:14px; border:1px dashed #9d8d67; color:#576452; background:rgba(255,253,245,.48); font-size:13px; } .ledger b { color:var(--ink); } .ledger p { margin:5px 0 0; } .ledger button { padding:0; border:0; border-bottom:1px solid currentColor; color:var(--jade); background:transparent; cursor:pointer; font:inherit; }
+    footer { margin:24px 4px 0; color:#787162; text-align:center; font-size:12px; }
+    @media (min-width:600px) { .service-grid { grid-template-columns:repeat(5,1fr); } .service { min-height:125px; } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header><p class="eyebrow">SAFE ACCOUNT DESK · 仅作办理引导</p><h1>账号事务台</h1><p class="intro">把复杂的官方账户流程，整理成适合手机阅读的一页清单。</p><i class="seal">慎行</i></header>
+    <aside class="notice">安全边界：本页不会登录、收集或保存账号、密码、验证码、密保卡和身份资料。关键操作请在官方页面或自己的远程 PC 中完成。</aside>
+    <div class="section-label">选择要办理的事项</div>
+    <section class="service-grid" id="service-grid" aria-label="账号服务">
+      <button class="service" type="button" data-id="phone" aria-pressed="false"><span class="stamp">手</span><strong>换绑手机</strong><small>更新安全手机号</small></button>
+      <button class="service" type="button" data-id="email" aria-pressed="false"><span class="stamp">信</span><strong>换绑邮箱</strong><small>更新安全邮箱</small></button>
+      <button class="service" type="button" data-id="password" aria-pressed="false"><span class="stamp">锁</span><strong>修改密码</strong><small>更新通行证密码</small></button>
+      <button class="service" type="button" data-id="security-card" aria-pressed="false"><span class="stamp">盾</span><strong>密保卡</strong><small>绑定、换绑或解绑</small></button>
+      <button class="service" type="button" data-id="ticket" aria-pressed="false"><span class="stamp">单</span><strong>提交工单</strong><small>人工协助与问题反馈</small></button>
+    </section>
+    <section class="journey" id="journey" aria-live="polite"></section>
+    <section class="ledger"><b>本机进度簿</b><p id="progress">尚未标记办理事项。</p><button type="button" id="clear-progress">清空本机记录</button></section>
+    <footer>非官方页面 · 所有账户操作均以蜗牛官方页面规则为准</footer>
+  </main>
+  <script>
+    const services = {
+      phone: { icon: '手', title: '换绑手机', caption: '更新安全手机号', url: 'https://safe.woniu.com/callcenter/self_help.html', steps: ['确认旧手机号或准备身份核验材料', '进入“安全自助”中的手机修改', '按官网提示完成验证', '确认新号码可正常接收通知'], notice: '请只在官方页面输入验证信息；本工具不输入密码、不保存验证码。' },
+      email: { icon: '信', title: '换绑邮箱', caption: '更新安全邮箱', url: 'https://safe.woniu.com/callcenter/self_help.html', steps: ['准备可正常收信的新邮箱', '进入“安全自助”中的邮箱修改', '在官方页面完成邮箱验证', '检查新邮箱的验证邮件'], notice: '完成后建议立即测试新邮箱是否能收到官方邮件。' },
+      password: { icon: '锁', title: '修改密码', caption: '更新通行证密码', url: 'https://safe.woniu.com/callcenter/self_help.html', steps: ['确认当前账号可通过安全验证', '进入“账号、密码自助”中的修改密码', '设置未在其他站点使用过的新密码', '在密码管理器中更新记录'], notice: '不要将密码、验证码或密保答案发送给任何人，包括本工具。' },
+      'security-card': { icon: '盾', title: '密保卡', caption: '绑定、换绑或解绑', url: 'https://safe.woniu.com/callcenter/self_help.html', steps: ['确认本次是申请、绑定、更换还是解绑', '进入“密保卡自助”', '按官网指引完成身份验证', '妥善保存密保卡，不要截图外传'], notice: '密保卡属于高敏感信息，建议优先在远程 PC 或实体电脑上操作。' },
+      ticket: { icon: '单', title: '提交工单', caption: '人工协助与问题反馈', url: 'https://support.woniu.com/', steps: ['整理账号归属与问题发生时间', '准备订单号、角色信息或相关截图', '在客服中心选择对应问题分类', '保存工单编号，等待官方回复'], notice: '截图前请遮盖身份证号、完整手机号、密码和验证码。' },
+    };
+    const grid = document.querySelector('#service-grid');
+    const journey = document.querySelector('#journey');
+    const progress = document.querySelector('#progress');
+    const storageKey = 'jy-account-desk-progress';
+    const renderProgress = () => { const item = localStorage.getItem(storageKey); progress.textContent = item ? `正在办理：${item}（仅保存在这台设备）` : '尚未标记办理事项。'; };
+    function isSafeExternalUrl(value) {
+      try { const url = new URL(value); return url.protocol === 'https:' && ['safe.woniu.com', 'support.woniu.com'].includes(url.hostname); } catch { return false; }
+    }
+    function openJourney(id) {
+      const service = services[id]; if (!service) return;
+      [...grid.children].forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.id === id)));
+      journey.innerHTML = `<div class="journey-head"><span class="stamp">${service.icon}</span><div><h2>${service.title}</h2><p>${service.caption}</p></div></div><ol>${service.steps.map((step) => `<li>${step}</li>`).join('')}</ol><p class="service-note">${service.notice}</p><div class="actions"><a class="action primary" target="_blank" rel="noopener noreferrer" href="${isSafeExternalUrl(service.url) ? service.url : '#'}">前往官方办理 ↗</a><button class="action secondary" type="button" id="mark-progress">标记为进行中</button></div>`;
+      journey.classList.add('active'); journey.querySelector('#mark-progress').addEventListener('click', () => { localStorage.setItem(storageKey, service.title); renderProgress(); });
+      journey.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    grid.querySelectorAll('.service').forEach((button) => button.addEventListener('click', () => openJourney(button.dataset.id)));
+    document.querySelector('#clear-progress').addEventListener('click', () => { localStorage.removeItem(storageKey); renderProgress(); });
+    renderProgress();
+  </script>
+</body>
+</html>
