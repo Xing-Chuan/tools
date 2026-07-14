@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const expectedLinks = [
+  'https://www.woniu.com/static/act/m/',
+  'https://safe.woniu.com/usercenter/mindex.html',
   'https://safe.woniu.com/safecenter/safe_bind.html',
   'https://safe.woniu.com/callcenter/self_help.html',
   'https://9yin.woniu.com/main.html',
-  'https://safe.woniu.com/usercenter/mindex.html',
-  'https://www.woniu.com/static/act/m/',
   'https://safe.woniu.com/safecenter/safe_liftItem.html',
   'https://www.woniu.com/static/act/snaildun/',
   'https://www.woniu.com/static/act/snailjishi/',
@@ -27,6 +27,15 @@ test('shows all nine requested direct-navigation links', async () => {
   assert.match(html, /更新安全手机、邮箱/);
   assert.match(html, /自助服务/);
   assert.doesNotMatch(html, /我的问题/);
+});
+
+test('puts 登录&注销 first and 账户管理 second', async () => {
+  const html = await readWorkbench();
+  const cards = [...html.matchAll(/<article class="service"[^>]*>(.*?)<\/article>/gs)].map((match) => match[1]);
+
+  assert.match(cards[0], /登录&amp;注销/);
+  assert.match(cards[0], /账号登录与退出入口/);
+  assert.match(cards[1], /账户管理/);
 });
 
 test('provides one copy-link control per service and no progress ledger', async () => {
