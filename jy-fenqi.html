@@ -423,6 +423,7 @@
         purchaseDateCn,
         firstInstallmentDateCn
       } = data;
+      const minimumFeePeriods = Math.ceil(periods / 3);
 
       const lines = [];
       lines.push("价格：" + fmtMoney(totalPrice));
@@ -432,6 +433,8 @@
       lines.push("每期：" + fmtMoney(tailPayment) + "/" + periods + "=" + fmtMoney(principalPerMonth) + "+" + fmtMoney(interestPerMonth) + "=" + fmtMoney(eachPayment));
       if (purchaseDateCn) lines.push("购买日期：" + purchaseDateCn);
       if (firstInstallmentDateCn) lines.push("第一期 " + firstInstallmentDateCn + " 待收");
+      lines.push("");
+      lines.push("提前还款说明：每分3期最低1期利息，本次最少" + minimumFeePeriods + "期利息，后续期数利息减半");
       return lines.join("\n");
     }
 
